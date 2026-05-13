@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(docker compose version *)",
+      "Bash(docker --version)",
+      "Bash(docker compose *)",
+      "Bash(docker info *)",
+      "Bash(curl -sf http://localhost:8000/healthz)",
+      "Bash(curl -sf http://localhost:8000/api/platforms)",
+      "Bash(curl *)",
+      "Bash(echo \"exit=$?\")",
+      "Read(//tmp/**)",
+      "Bash(grep -oE \"fonts\\\\.googleapis[^\\\\\"\\\\\\\\\\\\\\\\]*\" /tmp/home.html)",
+      "Bash(grep -oE \"\\(shadow-\\\\[3px_3px_0_0_#7A1F2B\\\\]|border-ink|bg-ink|text-paper|hover\\\\\\\\\\\\\\\\:border-ink|hover\\\\\\\\\\\\\\\\:text-ink\\)\" /tmp/layout.css)",
+      "Bash(grep -oE \"\\\\.[a-zA-Z0-9_:.\\\\\\\\\\\\\\\\-]+ink[a-zA-Z0-9_:.\\\\\\\\\\\\\\\\-]*[ ]*\\\\{[^}]{0,80}\" /tmp/layout.css)",
+      "Bash(grep -oE \"#[A-F0-9a-f]{3,6}\" /tmp/layout.css)",
+      "Bash(grep -oE \"\\\\.[a-zA-Z0-9_:\\\\\\\\\\\\\\\\-]+\\\\{[^}]{0,80}1[Aa]1714[^}]{0,80}\" /tmp/layout.css)",
+      "Bash(grep -oE \"\\\\.[a-zA-Z0-9_:\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\-]*ink[a-zA-Z0-9_:\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\-]*\" /tmp/layout.css)",
+      "Bash(grep -oE \"\\\\.[a-zA-Z0-9_:\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\-]*paper[a-zA-Z0-9_:\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\-]*\" /tmp/layout.css)",
+      "Bash(grep -oP '\\\\.[a-zA-Z][^,{\\\\s]*' /tmp/layout.css)",
+      "Bash(docker exec *)",
+      "Bash(grep -A1 \"shadow-\\\\\\\\\\\\[3px_3px_0_0_#7A1F2B\\\\\\\\\\\\]\" /tmp/layout.css)",
+      "Bash(grep -oE \"Agent 과제의 목적[^<]{0,200}\")"
+    ]
+  }
+}

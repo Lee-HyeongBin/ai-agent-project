@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work Agent Router</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Epilogue:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:    #0E1628;
+  --navy2:   #151f38;
+  --navy3:   #1d2b4a;
+  --gold:    #F0B429;
+  --gold2:   #ffd066;
+  --white:   #F4F6FB;
+  --dim:     #7B8DB0;
+  --dimmer:  #3d4d6e;
+
+  --teal:    #0E9B7F;
+  --teal-l:  #d0f0ea;
+  --teal-bg: #071a17;
+
+  --blue:    #1E6FBF;
+  --blue-l:  #cce0f8;
+  --blue-bg: #060f1e;
+
+  --amber:   #B86800;
+  --amber-l: #fde8c0;
+  --amber-bg:#1c1005;
+
+  --purple:  #7B35B0;
+  --purple-l:#ead5f8;
+  --purple-bg:#130820;
+
+  --border:  #1e2e50;
+  --r: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Epilogue', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Noise grain overlay ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+.wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+
+/* ── Header ── */
+.header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 48px; }
+.logo {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--gold); flex-shrink: 0;
+  display: grid; place-items: center;
+  font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; color: var(--navy);
+}
+.header-text h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+.header-text h1 span { color: var(--gold); }
+.header-text p { font-size: 13px; color: var(--dim); margin-top: 6px; line-height: 1.5; }
+
+/* ── Pill tabs (platforms legend) ── */
+.legend { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+.legend-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em;
+  border: 1px solid;
+}
+
+/* ── Form card ── */
+.form-card {
+  background: var(--navy2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 32px;
+  margin-bottom: 20px;
+}
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold);
+  margin-bottom: 10px;
+}
+
+/* ── Grid inputs ── */
+.input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: 12px; font-weight: 600; color: var(--dim); letter-spacing: 0.04em; text-transform: uppercase; }
+
+input, textarea, select {
+  background: var(--navy3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--white);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  padding: 12px 14px;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  resize: vertical;
+}
+input::placeholder, textarea::placeholder { color: var(--dimmer); }
+input:focus, textarea:focus, select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(240,180,41,0.12);
+}
+select option { background: var(--navy2); }
+textarea { min-height: 90px; line-height: 1.55; }
+
+/* ── Tag selector ── */
+.tag-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.tag-btn {
+  padding: 6px 14px; border-radius: 20px; cursor: pointer;
+  font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--navy3); color: var(--dim);
+  transition: all 0.18s;
+  user-select: none;
+}
+.tag-btn:hover { border-color: var(--dim); color: var(--white); }
+.tag-btn.active { color: var(--navy); }
+.tag-btn[data-v="data"].active        { background: var(--teal); border-color: var(--teal); }
+.tag-btn[data-v="productivity"].active{ background: var(--blue); border-color: var(--blue); }
+.tag-btn[data-v="legacy"].active      { background: var(--amber); border-color: var(--amber); }
+.tag-btn[data-v="workflow"].active    { background: var(--purple); border-color: var(--purple); }
+.tag-btn[data-v="knowledge"].active   { background: var(--purple); border-color: var(--purple); }
+.tag-btn[data-v="crossplatform"].active{ background: var(--gold); border-color: var(--gold); }
+
+/* ── Security / scale selectors ── */
+.radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.radio-btn {
+  padding: 6px 14px; border-radius: 20px; cursor: pointer;
+  font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border); background: var(--navy3); color: var(--dim);
+  transition: all 0.18s; user-select: none;
+}
+.radio-btn.active { background: var(--gold); border-color: var(--gold); color: var(--navy); }
+
+/* ── Submit button ── */
+.submit-btn {
+  width: 100%; padding: 16px;
+  background: var(--gold); color: var(--navy);
+  border: none; border-radius: 10px;
+  font-family: 'Epilogue', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; letter-spacing: 0.02em;
+  transition: background 0.2s, transform 0.1s;
+  margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.submit-btn:hover { background: var(--gold2); }
+.submit-btn:active { transform: scale(0.99); }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── Spinner ── */
+.spinner {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2.5px solid rgba(0,0,0,0.2);
+  border-top-color: var(--navy);
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+.submit-btn.loading .spinner { display: block; }
+.submit-btn.loading .btn-label { opacity: 0.7; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Result card ── */
+.result-card {
+  background: var(--navy2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 0;
+  overflow: hidden;
+  display: none;
+  animation: fadeUp 0.4s ease;
+}
+.result-card.visible { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Platform decision banner ── */
+.decision-banner {
+  padding: 24px 32px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 20px;
+}
+.platform-badge {
+  flex-shrink: 0; width: 56px; height: 56px; border-radius: 14px;
+  display: grid; place-items: center;
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+  text-align: center; line-height: 1.3;
+}
+.decision-text { flex: 1; }
+.decision-text .verdict {
+  font-size: 20px; font-weight: 800; letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.decision-text .verdict-sub { font-size: 13px; color: var(--dim); }
+
+.confidence-bar-wrap { margin-top: 10px; }
+.confidence-label { font-size: 11px; color: var(--dim); margin-bottom: 4px; font-family: 'DM Mono', monospace; }
+.confidence-track {
+  height: 5px; background: var(--navy3); border-radius: 3px; overflow: hidden;
+}
+.confidence-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Platform score grid ── */
+.score-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.score-col {
+  padding: 20px 20px;
+  border-right: 1px solid var(--border);
+  transition: background 0.2s;
+}
+.score-col:last-child { border-right: none; }
+.score-col.winner { background: rgba(240,180,41,0.04); }
+
+.score-col-name {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.score-col-tag { font-size: 10px; color: var(--dim); margin-bottom: 14px; }
+.score-num { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; }
+.score-label { font-size: 10px; color: var(--dim); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.score-bar-track { height: 3px; background: var(--navy3); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+.score-bar-fill { height: 100%; border-radius: 2px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+.winner-crown { font-size: 10px; margin-top: 8px; }
+
+/* ── Reasoning & details ── */
+.details-section { padding: 28px 32px; }
+
+.reasoning-block {
+  background: var(--navy3); border-radius: 10px; padding: 18px 20px;
+  border-left: 3px solid var(--gold); margin-bottom: 20px;
+}
+.reasoning-block h4 {
+  font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold);
+  margin-bottom: 10px;
+}
+.reasoning-block p {
+  font-size: 13.5px; line-height: 1.7; color: #c5cedf;
+}
+
+/* ── Sub-platform & alternatives ── */
+.sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.sub-card {
+  background: var(--navy3); border-radius: 10px; padding: 16px;
+  border: 1px solid var(--border);
+}
+.sub-card h4 { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; font-family: 'DM Mono', monospace; }
+.sub-card ul { list-style: none; }
+.sub-card ul li {
+  font-size: 13px; line-height: 1.6; color: #c5cedf;
+  padding: 3px 0; padding-left: 14px; position: relative;
+}
+.sub-card ul li::before { content: '→'; position: absolute; left: 0; color: var(--dim); font-size: 11px; top: 4px; }
+
+/* ── Warning / watch-outs ── */
+.warnings { margin-top: 16px; }
+.warn-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px; border-radius: 8px;
+  background: rgba(240,180,41,0.06); border: 1px solid rgba(240,180,41,0.2);
+  margin-bottom: 8px;
+}
+.warn-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.warn-text { font-size: 13px; color: #c5cedf; line-height: 1.5; }
+
+/* ── Error ── */
+.error-box {
+  background: rgba(200,50,50,0.1); border: 1px solid rgba(200,50,50,0.3);
+  border-radius: 10px; padding: 16px 20px; color: #f08080;
+  font-size: 13px; display: none; margin-top: 12px;
+}
+.error-box.visible { display: block; }
+
+/* ── Platform color helpers ── */
+.c-teal   { color: var(--teal); }
+.c-blue   { color: var(--blue); }
+.c-amber  { color: var(--amber); }
+.c-purple { color: var(--purple); }
+.c-gold   { color: var(--gold); }
+
+.bg-teal   { background: var(--teal); }
+.bg-blue   { background: var(--blue); }
+.bg-amber  { background: var(--amber); }
+.bg-purple { background: var(--purple); }
+
+.border-teal   { border-color: var(--teal); }
+.border-blue   { border-color: var(--blue); }
+.border-amber  { border-color: var(--amber); }
+.border-purple { border-color: var(--purple); }
+
+.fill-teal   { background: var(--teal); }
+.fill-blue   { background: var(--blue); }
+.fill-amber  { background: var(--amber); }
+.fill-purple { background: var(--purple); }
+
+@media (max-width: 640px) {
+  .input-grid { grid-template-columns: 1fr; }
+  .score-grid { grid-template-columns: 1fr 1fr; }
+  .sub-grid   { grid-template-columns: 1fr; }
+  .score-col  { border-right: none; border-bottom: 1px solid var(--border); }
+  .score-col:last-child { border-bottom: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">AR</div>
+    <div class="header-text">
+      <h1>Work Agent <span>Router</span></h1>
+      <p>Agent 목적·스펙을 입력하면 AI가 최적 플랫폼을 분석하고 배치 근거를 제시합니다.</p>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item" style="color:var(--teal);border-color:var(--teal);background:var(--teal-bg)">
+      <span>●</span> Palantir AIP
+    </div>
+    <div class="legend-item" style="color:var(--blue);border-color:var(--blue);background:var(--blue-bg)">
+      <span>●</span> MS Copilot Studio
+    </div>
+    <div class="legend-item" style="color:var(--amber);border-color:var(--amber);background:var(--amber-bg)">
+      <span>●</span> Custom Agent (AWS/GCP)
+    </div>
+    <div class="legend-item" style="color:var(--purple);border-color:var(--purple);background:var(--purple-bg)">
+      <span>●</span> ixi-Enterprise
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card">
+    <p class="section-label">Agent 스펙 입력</p>
+    <div class="input-grid">
+
+      <div class="field full">
+        <label>Agent 목적 *</label>
+        <textarea id="purpose" placeholder="예) 매일 오전 ERP에서 생산 데이터를 추출하여 이상값을 감지하고 담당자에게 알림을 보내는 Agent"></textarea>
+      </div>
+
+      <div class="field full">
+        <label>주요 도메인 / 업무 유형</label>
+        <div class="tag-group" id="domainTags">
+          <div class="tag-btn" data-v="data">데이터·분석</div>
+          <div class="tag-btn" data-v="productivity">생산성·협업</div>
+          <div class="tag-btn" data-v="legacy">Legacy 연동</div>
+          <div class="tag-btn" data-v="workflow">내부 업무 프로세스</div>
+          <div class="tag-btn" data-v="knowledge">지식·문서 관리</div>
+          <div class="tag-btn" data-v="crossplatform">크로스 플랫폼</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>연동 시스템</label>
+        <input id="systems" placeholder="예) SAP ERP, Oracle DB, Teams, SharePoint" />
+      </div>
+
+      <div class="field">
+        <label>예상 실행 빈도</label>
+        <select id="frequency">
+          <option value="">선택</option>
+          <option value="realtime">실시간 (분 단위)</option>
+          <option value="hourly">시간 단위</option>
+          <option value="daily">일 단위</option>
+          <option value="weekly">주 단위</option>
+          <option value="ondemand">온디맨드 (사용자 요청 시)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>보안·데이터 민감도</label>
+        <div class="radio-group" id="securityTags">
+          <div class="radio-btn" data-v="low">낮음</div>
+          <div class="radio-btn" data-v="medium">중간</div>
+          <div class="radio-btn" data-v="high">높음 (PII/기밀)</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>예상 사용자 규모</label>
+        <div class="radio-group" id="scaleTags">
+          <div class="radio-btn" data-v="individual">개인</div>
+          <div class="radio-btn" data-v="team">팀 (10명 내외)</div>
+          <div class="radio-btn" data-v="department">부서 (100명+)</div>
+          <div class="radio-btn" data-v="company">전사</div>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>추가 요구사항 / 제약사항</label>
+        <textarea id="constraints" style="min-height:60px" placeholder="예) Private 네트워크 내에서만 실행되어야 함, M365 계정으로 로그인한 사용자만 접근 가능"></textarea>
+      </div>
+
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="runRouter()">
+      <div class="spinner"></div>
+      <span class="btn-label">🔀 최적 플랫폼 분석</span>
+    </button>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+
+    <!-- Decision Banner -->
+    <div class="decision-banner" id="decisionBanner">
+      <div class="platform-badge" id="platformBadge"></div>
+      <div class="decision-text">
+        <div class="verdict" id="verdictText"></div>
+        <div class="verdict-sub" id="verdictSub"></div>
+        <div class="confidence-bar-wrap">
+          <div class="confidence-label" id="confidenceLabel"></div>
+          <div class="confidence-track">
+            <div class="confidence-fill" id="confidenceFill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score Grid -->
+    <div class="score-grid" id="scoreGrid"></div>
+
+    <!-- Details -->
+    <div class="details-section">
+      <div class="reasoning-block">
+        <h4>배치 근거</h4>
+        <p id="reasoningText"></p>
+      </div>
+      <div class="sub-grid">
+        <div class="sub-card">
+          <h4>권장 구현 스택</h4>
+          <ul id="stackList"></ul>
+        </div>
+        <div class="sub-card">
+          <h4>대안 플랫폼 검토</h4>
+          <ul id="altList"></ul>
+        </div>
+      </div>
+      <div class="warnings" id="warningsDiv"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── Tag toggles ───
+document.querySelectorAll('#domainTags .tag-btn').forEach(btn => {
+  btn.addEventListener('click', () => btn.classList.toggle('active'));
+});
+['#securityTags .radio-btn', '#scaleTags .radio-btn'].forEach(sel => {
+  document.querySelectorAll(sel).forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll(sel).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+});
+
+// ─── Platform config ───
+const PLATFORMS = {
+  palantir: {
+    name: 'Palantir AIP',
+    tag: '데이터·운영 분석',
+    badgeText: 'AIP',
+    color: '#0E9B7F',
+    colorL: '#d0f0ea',
+    bg: 'var(--teal-bg)',
+    cls: 'teal',
+  },
+  copilot: {
+    name: 'MS Copilot Studio',
+    tag: '생산성·협업',
+    badgeText: 'COP',
+    color: '#1E6FBF',
+    colorL: '#cce0f8',
+    bg: 'var(--blue-bg)',
+    cls: 'blue',
+  },
+  custom: {
+    name: 'Custom Agent',
+    tag: 'AWS/GCP · Legacy',
+    badgeText: 'CUST',
+    color: '#B86800',
+    colorL: '#fde8c0',
+    bg: 'var(--amber-bg)',
+    cls: 'amber',
+  },
+  ixi: {
+    name: 'ixi-Enterprise',
+    tag: '내부 업무·지식',
+    badgeText: 'ixi',
+    color: '#7B35B0',
+    colorL: '#ead5f8',
+    bg: 'var(--purple-bg)',
+    cls: 'purple',
+  },
+};
+
+// ─── Main router ───
+async function runRouter() {
+  const purpose     = document.getElementById('purpose').value.trim();
+  const systems     = document.getElementById('systems').value.trim();
+  const frequency   = document.getElementById('frequency').value;
+  const constraints = document.getElementById('constraints').value.trim();
+  const domains     = [...document.querySelectorAll('#domainTags .tag-btn.active')].map(b => b.textContent);
+  const security    = document.querySelector('#securityTags .radio-btn.active')?.dataset.v || '';
+  const scale       = document.querySelector('#scaleTags .radio-btn.active')?.dataset.v || '';
+
+  if (!purpose) {
+    showError('Agent 목적을 입력해 주세요.');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  hideError();
+  document.getElementById('resultCard').classList.remove('visible');
+
+  const prompt = buildPrompt({ purpose, systems, frequency, constraints, domains, security, scale });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `당신은 Work Agent 플랫폼 라우팅 전문가입니다.
+아래 4개 플랫폼의 특성을 완벽히 숙지하고 있습니다:
+
+1. Palantir AIP: 데이터 집약형 운영 분석. 자체 Ontology(Objects·Actions). Foundry 기반 파이프라인. KPI 모니터링·이상 감지·예측 분석에 최적. 비즈니스 데이터 중심 의사결정.
+
+2. MS Copilot Studio: M365 생태계 네이티브. Graph API. Teams·Outlook·SharePoint·Calendar 연동. 생산성·협업·문서 작업. 전사 배포 용이. 사용자 접점 최다.
+
+3. Custom Agent (AWS/GCP): Legacy 시스템 연동 전담. SAP·Oracle·MES·SCADA 등 어댑터. LangGraph·CrewAI 기반. Private VPC 격리 실행. 보안 민감 업무. 복잡한 멀티스텝 자동화.
+
+4. ixi-Enterprise: 사내 내부 업무 워크플로우 전용. Agent Builder로 담당자 직접 제작. KMS(지식관리) 기반 RAG. 결재·온보딩·매뉴얼 검색·부서 요청 처리.
+
+반드시 순수 JSON 객체만 반환하세요. { 로 시작해서 } 로 끝내고 마크다운 코드블록 없이:
+{
+  "primary": "palantir 또는 copilot 또는 custom 또는 ixi 중 하나",
+  "confidence": 60에서 98 사이 정수,
+  "verdict": "한 줄 결론 30자 이내",
+  "verdict_sub": "선택 이유 50자 이내",
+  "reasoning": "배치 근거 3-4문장",
+  "scores": { "palantir": 정수, "copilot": 정수, "custom": 정수, "ixi": 정수 },
+  "stack": ["스택1", "스택2", "스택3", "스택4"],
+  "alternatives": ["대안1", "대안2", "대안3"],
+  "warnings": ["주의1", "주의2"]
+}`,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      let errMsg = 'HTTP ' + res.status;
+      try { errMsg = JSON.parse(errText)?.error?.message || errMsg; } catch(_) {}
+      throw new Error('API 오류: ' + errMsg);
+    }
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const raw = data.content?.find(b => b.type === 'text')?.text || '';
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('응답에서 JSON을 찾을 수 없습니다. 다시 시도해 주세요.');
+    const result = JSON.parse(jsonMatch[0]);
+
+    const validPlatforms = ['palantir', 'copilot', 'custom', 'ixi'];
+    if (!validPlatforms.includes(result.primary)) {
+      const matched = validPlatforms.find(p => (result.primary || '').toLowerCase().includes(p));
+      if (matched) result.primary = matched;
+      else throw new Error('알 수 없는 플랫폼 값: ' + result.primary);
+    }
+    renderResult(result);
+
+  } catch (e) {
+    showError('분석 중 오류가 발생했습니다: ' + e.message);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function buildPrompt({ purpose, systems, frequency, constraints, domains, security, scale }) {
+  return [
+    `[Agent 목적] ${purpose}`,
+    systems     ? `[연동 시스템] ${systems}` : '',
+    frequency   ? `[실행 빈도] ${frequency}` : '',
+    domains.length ? `[도메인] ${domains.join(', ')}` : '',
+    security    ? `[보안 민감도] ${security}` : '',
+    scale       ? `[사용자 규모] ${scale}` : '',
+    constraints ? `[추가 요구사항] ${constraints}` : '',
+  ].filter(Boolean).join('\n');
+}
+
+function renderResult(r) {
+  const p = PLATFORMS[r.primary];
+  const card = document.getElementById('resultCard');
+
+  // ── Banner ──
+  const badge = document.getElementById('platformBadge');
+  badge.style.background = p.color;
+  badge.style.color = '#fff';
+  badge.textContent = p.badgeText;
+
+  document.getElementById('verdictText').textContent = r.verdict;
+  document.getElementById('verdictText').style.color = p.color;
+  document.getElementById('verdictSub').textContent = r.verdict_sub;
+
+  const confLabel = document.getElementById('confidenceLabel');
+  confLabel.textContent = `신뢰도 ${r.confidence}%`;
+  const fill = document.getElementById('confidenceFill');
+  fill.style.background = p.color;
+  setTimeout(() => { fill.style.width = r.confidence + '%'; }, 100);
+
+  // Banner bg tint
+  document.getElementById('decisionBanner').style.background =
+    r.confidence >= 80
+      ? `linear-gradient(135deg, ${p.color}11 0%, transparent 60%)`
+      : 'transparent';
+
+  // ── Score grid ──
+  const grid = document.getElementById('scoreGrid');
+  const order = ['palantir','copilot','custom','ixi'];
+  grid.innerHTML = order.map(key => {
+    const pl = PLATFORMS[key];
+    const score = r.scores[key];
+    const isWinner = key === r.primary;
+    return `
+      <div class="score-col ${isWinner ? 'winner' : ''}">
+        <div class="score-col-name" style="color:${pl.color}">${pl.name}</div>
+        <div class="score-col-tag">${pl.tag}</div>
+        <div class="score-num" style="color:${pl.color}">${score}</div>
+        <div class="score-label">/ 100점</div>
+        <div class="score-bar-track">
+          <div class="score-bar-fill fill-${pl.cls}" id="bar_${key}" style="width:0%"></div>
+        </div>
+        ${isWinner ? '<div class="winner-crown" style="color:var(--gold)">★ 권장 플랫폼</div>' : ''}
+      </div>`;
+  }).join('');
+
+  setTimeout(() => {
+    order.forEach(key => {
+      const el = document.getElementById('bar_' + key);
+      if (el) el.style.width = r.scores[key] + '%';
+    });
+  }, 150);
+
+  // ── Reasoning ──
+  document.getElementById('reasoningText').textContent = r.reasoning;
+
+  // ── Stack ──
+  document.getElementById('stackList').innerHTML =
+    (r.stack || []).map(s => `<li>${s}</li>`).join('');
+
+  // ── Alternatives ──
+  document.getElementById('altList').innerHTML =
+    (r.alternatives || []).map(a => `<li>${a}</li>`).join('');
+
+  // ── Warnings ──
+  const wDiv = document.getElementById('warningsDiv');
+  if (r.warnings?.length) {
+    wDiv.innerHTML = r.warnings.map(w => `
+      <div class="warn-item">
+        <div class="warn-icon">⚠️</div>
+        <div class="warn-text">${w}</div>
+      </div>`).join('');
+  } else {
+    wDiv.innerHTML = '';
+  }
+
+  card.classList.add('visible');
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+function hideError() {
+  document.getElementById('errorBox').classList.remove('visible');
+}
+
+// Enter shortcut
+document.getElementById('purpose').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) runRouter();
+});
+</script>
+</body>
+</html>

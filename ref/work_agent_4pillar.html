@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work Agent 4 Pillar Architecture</title>
+<style>
+  :root {
+    --bg: #F8F7F4; --bg2: #FFFFFF; --bg3: #F1EFE8;
+    --text: #1a1a18; --text2: #5F5E5A; --text3: #888780;
+    --border: #D3D1C7; --border2: #E8E6DF;
+    --teal: #0F6E56; --teal-l: #E1F5EE; --teal-m: #1D9E75;
+    --blue: #185FA5; --blue-l: #E6F1FB; --blue-m: #378ADD;
+    --amber: #854F0B; --amber-l: #FAEEDA; --amber-m: #EF9F27;
+    --pink: #72243E; --pink-l: #FBEAF0; --pink-m: #D4537E;
+    --purple: #3C3489; --purple-l: #EEEDFE; --purple-m: #534AB7;
+    --coral: #993C1D; --coral-l: #FAECE7;
+    --gray-l: #F1EFE8;
+    --ixi: #6B2F91; --ixi-l: #F5EAFB; --ixi-b: #9B59B6;
+    --r: 10px; --r-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 28px 24px; font-size: 13px; line-height: 1.5; }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+  .sub { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
+  .section-label { font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+
+  /* ── Architecture SVG wrapper ── */
+  .arch-wrap { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--r); padding: 20px; margin-bottom: 20px; }
+
+  /* ── Platform Cards ── */
+  .platforms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .p-card { background: var(--bg2); border-radius: var(--r); padding: 14px; border: 0.5px solid var(--border); }
+  .p-card.ixi { border: 2px solid var(--ixi-b); }
+  .p-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .p-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .p-name { font-size: 13px; font-weight: 500; }
+  .p-tagline { font-size: 11px; color: var(--text3); margin-bottom: 10px; }
+  .pill { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px; margin-bottom: 8px; }
+  .feature-label { font-size: 10px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--text3); margin: 8px 0 5px; }
+  .feat { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; font-size: 12px; color: var(--text); line-height: 1.4; }
+  .feat-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .agent-chip { display: inline-block; background: var(--bg3); border-radius: 5px; font-size: 11px; padding: 3px 8px; margin: 2px 2px 2px 0; color: var(--text2); }
+  hr.div { border: none; border-top: 0.5px solid var(--border2); margin: 8px 0; }
+
+  /* ── Quick Wins ── */
+  .qw-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .qw-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--r); padding: 14px; }
+  .qw-num { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .qw-title { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .qw-body { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .qw-badge { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px; margin-bottom: 10px; display: inline-block; }
+
+  /* ── Event contracts ── */
+  .ev-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+  .ev-card { background: var(--bg2); border-radius: var(--r); padding: 12px; border: 0.5px solid var(--border); border-left-width: 3px; }
+  .ev-title { font-size: 12px; font-weight: 500; margin-bottom: 4px; }
+  .ev-body { font-size: 12px; color: var(--text2); }
+</style>
+</head>
+<body>
+
+<h1>Work Agent Architecture v3 — 4 Pillar Federated</h1>
+<p class="sub">Palantir AIP · MS Copilot Studio · Custom Agent (AWS/GCP) · ixi-Enterprise — 독립 운영 + 이벤트 버스 교차 연결</p>
+
+<!-- ══ Architecture Diagram ══ -->
+<div class="arch-wrap">
+<svg width="100%" viewBox="0 0 680 590" role="img">
+<title>Work Agent 4 Pillar 통합 아키텍처</title>
+<desc>4개 플랫폼이 Control Plane 아래 독립 운영되고 Event Bus로만 교차 연결되는 Federated 구조</desc>
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- Control Plane -->
+<rect x="10" y="10" width="660" height="72" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1" stroke-dasharray="5 3"/>
+<text x="24" y="28" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#3C3489">Control Plane — 라우팅 · 정책 · 감사</text>
+<rect x="20"  y="34" width="140" height="38" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="90"  y="49" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="12" font-weight="500" fill="#3C3489">Agent Router</text>
+<text x="90"  y="64" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">작업 유형별 분기</text>
+<rect x="172" y="34" width="140" height="38" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="242" y="49" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="12" font-weight="500" fill="#3C3489">Policy Engine</text>
+<text x="242" y="64" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">보안·접근 정책</text>
+<rect x="324" y="34" width="140" height="38" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="394" y="49" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="12" font-weight="500" fill="#3C3489">Audit Logger</text>
+<text x="394" y="64" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">전 플랫폼 감사</text>
+<rect x="476" y="34" width="164" height="38" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="558" y="49" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="12" font-weight="500" fill="#3C3489">Observability</text>
+<text x="558" y="64" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">메트릭·트레이싱</text>
+
+<!-- CP → Platforms -->
+<line x1="90"  y1="82" x2="90"  y2="108" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+<line x1="242" y1="82" x2="242" y2="108" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+<line x1="410" y1="82" x2="410" y2="108" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+<line x1="577" y1="82" x2="577" y2="108" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+
+<text x="340" y="104" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#888780">독립 플랫폼 레이어 — 각자 고유 데이터 모델 유지</text>
+
+<!-- ── Palantir ── -->
+<rect x="10" y="110" width="154" height="168" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+<text x="87" y="126" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#085041">Palantir AIP</text>
+<rect x="20" y="132" width="134" height="30" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="87" y="147" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#04342C">AIP Logic</text>
+<text x="87" y="158" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#085041">운영 Agent</text>
+<rect x="20" y="170" width="134" height="30" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="87" y="185" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#04342C">자체 Ontology</text>
+<text x="87" y="196" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#085041">독립 운영</text>
+<rect x="20" y="208" width="134" height="30" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="87" y="223" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#04342C">Foundry Dataset</text>
+<text x="87" y="234" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#085041">분석·KPI</text>
+<text x="87" y="270" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#888780">데이터·운영 분석</text>
+
+<!-- ── MS Copilot ── -->
+<rect x="174" y="110" width="154" height="168" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+<text x="251" y="126" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#0C447C">MS Copilot Studio</text>
+<rect x="184" y="132" width="134" height="30" rx="5" fill="#85B7EB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="251" y="147" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#042C53">Copilot Agent</text>
+<text x="251" y="158" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#0C447C">M365 네이티브</text>
+<rect x="184" y="170" width="134" height="30" rx="5" fill="#85B7EB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="251" y="185" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#042C53">Graph API 모델</text>
+<text x="251" y="196" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#0C447C">자체 M365 스키마</text>
+<rect x="184" y="208" width="134" height="30" rx="5" fill="#85B7EB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="251" y="223" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#042C53">Power Platform</text>
+<text x="251" y="234" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#0C447C">Teams·Outlook</text>
+<text x="251" y="270" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#888780">생산성·협업</text>
+
+<!-- ── Custom Agent ── -->
+<rect x="338" y="110" width="154" height="168" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
+<text x="415" y="126" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#633806">Custom (AWS/GCP)</text>
+<rect x="348" y="132" width="134" height="30" rx="5" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+<text x="415" y="147" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#412402">Agent Framework</text>
+<text x="415" y="158" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#633806">LangGraph·CrewAI</text>
+<rect x="348" y="170" width="134" height="30" rx="5" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+<text x="415" y="185" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#412402">Legacy 어댑터</text>
+<text x="415" y="196" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#633806">SAP·Oracle 연동</text>
+<rect x="348" y="208" width="134" height="30" rx="5" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+<text x="415" y="223" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#412402">Private VPC</text>
+<text x="415" y="234" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#633806">내부 보안 망</text>
+<text x="415" y="270" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#888780">Legacy 연동 전담</text>
+
+<!-- ── ixi-Enterprise (highlighted) ── -->
+<rect x="502" y="110" width="168" height="168" rx="10" fill="#F5EAFB" stroke="#6B2F91" stroke-width="2"/>
+<rect x="502" y="110" width="168" height="18" rx="10" fill="#9B59B6" opacity="0.18"/>
+<text x="586" y="124" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#4A1B77">ixi-Enterprise  ✦ NEW</text>
+<rect x="512" y="132" width="148" height="30" rx="5" fill="#ED93B1" stroke="#6B2F91" stroke-width="0.5"/>
+<text x="586" y="147" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#4B1528">Agent Builder</text>
+<text x="586" y="158" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#72243E">업무 워크플로우 Agent</text>
+<rect x="512" y="170" width="148" height="30" rx="5" fill="#ED93B1" stroke="#6B2F91" stroke-width="0.5"/>
+<text x="586" y="185" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#4B1528">KMS</text>
+<text x="586" y="196" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#72243E">지식관리 데이터 영역</text>
+<rect x="512" y="208" width="148" height="30" rx="5" fill="#ED93B1" stroke="#6B2F91" stroke-width="0.5"/>
+<text x="586" y="223" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#4B1528">내부 Workflow</text>
+<text x="586" y="234" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#72243E">업무 프로세스 자동화</text>
+<text x="586" y="270" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#888780">내부 업무·지식 전담</text>
+
+<!-- ── Event Bus ── -->
+<text x="340" y="294" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#888780">이벤트 교차점 — 계약 기반 연결</text>
+<line x1="87"  y1="278" x2="87"  y2="300" stroke="#0F6E56" stroke-width="0.8" marker-end="url(#arr)"/>
+<line x1="251" y1="278" x2="251" y2="300" stroke="#185FA5" stroke-width="0.8" marker-end="url(#arr)"/>
+<line x1="415" y1="278" x2="415" y2="300" stroke="#854F0B" stroke-width="0.8" marker-end="url(#arr)"/>
+<line x1="586" y1="278" x2="586" y2="300" stroke="#6B2F91" stroke-width="0.8" marker-end="url(#arr)"/>
+
+<rect x="10" y="300" width="660" height="50" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.8" stroke-dasharray="4 2"/>
+<text x="24" y="316" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#444441">Event Bus — Kafka / AWS EventBridge</text>
+<rect x="18"  y="322" width="146" height="20" rx="4" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+<text x="91"  y="332" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#2C2C2A">Copilot→Custom: 승인</text>
+<rect x="174" y="322" width="154" height="20" rx="4" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+<text x="251" y="332" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#2C2C2A">Custom→Palantir: 데이터</text>
+<rect x="338" y="322" width="156" height="20" rx="4" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+<text x="416" y="332" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#2C2C2A">Palantir→Copilot: 알림</text>
+<rect x="504" y="322" width="158" height="20" rx="4" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+<text x="583" y="332" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#2C2C2A">ixi↔Custom: 워크플로우</text>
+
+<!-- Security -->
+<line x1="340" y1="350" x2="340" y2="368" stroke="#B4B2A9" stroke-width="0.8" marker-end="url(#arr)"/>
+<text x="340" y="364" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#888780">Identity &amp; Security</text>
+<rect x="10"  y="370" width="196" height="36" rx="7" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text x="108" y="383" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#712B13">SSO / IdP</text>
+<text x="108" y="398" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#993C1D">Azure AD · Okta</text>
+<rect x="216" y="370" width="214" height="36" rx="7" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text x="323" y="383" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#712B13">Secret Manager</text>
+<text x="323" y="398" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#993C1D">API Key · Credential</text>
+<rect x="440" y="370" width="230" height="36" rx="7" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text x="555" y="383" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#712B13">Data Governance</text>
+<text x="555" y="398" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#993C1D">분류·마스킹·접근 제어</text>
+
+<!-- Legacy -->
+<line x1="340" y1="406" x2="340" y2="422" stroke="#B4B2A9" stroke-width="0.8" marker-end="url(#arr)"/>
+<text x="340" y="418" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#888780">Legacy / 내부 시스템</text>
+<rect x="10" y="424" width="660" height="38" rx="8" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.8"/>
+<rect x="20"  y="432" width="92"  height="22" rx="4" fill="#D3D1C7" stroke="#B4B2A9" stroke-width="0.5"/>
+<text x="66"  y="443" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" font-weight="500" fill="#2C2C2A">SAP ERP</text>
+<rect x="122" y="432" width="92"  height="22" rx="4" fill="#D3D1C7" stroke="#B4B2A9" stroke-width="0.5"/>
+<text x="168" y="443" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" font-weight="500" fill="#2C2C2A">Oracle DB</text>
+<rect x="224" y="432" width="106" height="22" rx="4" fill="#D3D1C7" stroke="#B4B2A9" stroke-width="0.5"/>
+<text x="277" y="443" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" font-weight="500" fill="#2C2C2A">MES/SCADA</text>
+<rect x="340" y="432" width="92"  height="22" rx="4" fill="#D3D1C7" stroke="#B4B2A9" stroke-width="0.5"/>
+<text x="386" y="443" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" font-weight="500" fill="#2C2C2A">HR System</text>
+<rect x="442" y="432" width="72"  height="22" rx="4" fill="#F4C0D1" stroke="#6B2F91" stroke-width="0.5"/>
+<text x="478" y="443" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" font-weight="500" fill="#4B1528">KMS</text>
+<rect x="524" y="432" width="84"  height="22" rx="4" fill="#D3D1C7" stroke="#B4B2A9" stroke-width="0.5"/>
+<text x="566" y="443" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" font-weight="500" fill="#2C2C2A">사내 API</text>
+<rect x="618" y="432" width="44"  height="22" rx="4" fill="#D3D1C7" stroke="#B4B2A9" stroke-width="0.5"/>
+<text x="640" y="443" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" font-weight="500" fill="#2C2C2A">ERP</text>
+
+<!-- Legend -->
+<rect x="10" y="478" width="660" height="102" rx="8" fill="none" stroke="#D3D1C7" stroke-width="0.5"/>
+<text x="24" y="494" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" font-weight="500" fill="#888780" letter-spacing="0.04em">QUICK WIN — 4 Pillar 공통화 즉시 효과</text>
+<rect x="20"  y="500" width="152" height="50" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="96"  y="516" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#3C3489">단일 SSO</text>
+<text x="96"  y="530" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">4 플랫폼 1회 로그인</text>
+<text x="96"  y="543" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">즉시 적용 가능</text>
+<rect x="182" y="500" width="152" height="50" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="258" y="516" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#3C3489">통합 감사 로그</text>
+<text x="258" y="530" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">Agent 실행 전 가시성</text>
+<text x="258" y="543" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">컴플라이언스 즉시 대응</text>
+<rect x="344" y="500" width="152" height="50" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="420" y="516" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#3C3489">KMS 전사 공유</text>
+<text x="420" y="530" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">ixi KMS→전 플랫폼 RAG</text>
+<text x="420" y="543" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">사내 지식 즉시 활용</text>
+<rect x="506" y="500" width="156" height="50" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="584" y="516" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="11" font-weight="500" fill="#3C3489">알림 채널 통합</text>
+<text x="584" y="530" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">4 플랫폼→Teams 단일창</text>
+<text x="584" y="543" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="10" fill="#534AB7">업무 맥락 단절 해소</text>
+</svg>
+</div>
+
+<!-- ══ Platform Detail Cards ══ -->
+<p class="section-label">플랫폼별 특징 & 특화 Agent</p>
+<div class="platforms">
+
+  <!-- Palantir -->
+  <div class="p-card">
+    <div class="p-header">
+      <div class="p-dot" style="background:#1D9E75"></div>
+      <span class="p-name" style="color:#085041">Palantir AIP</span>
+    </div>
+    <p class="p-tagline">데이터 집약형 운영 의사결정 플랫폼</p>
+    <span class="pill" style="background:#E1F5EE;color:#085041">자체 Ontology 독립 운영</span>
+    <p class="feature-label">핵심 특징</p>
+    <div class="feat"><span class="feat-dot" style="background:#1D9E75"></span>Foundry 기반 전사 데이터 통합·파이프라인</div>
+    <div class="feat"><span class="feat-dot" style="background:#1D9E75"></span>Objects·Actions로 비즈니스 엔터티 모델링</div>
+    <div class="feat"><span class="feat-dot" style="background:#1D9E75"></span>AIP Logic으로 데이터 기반 자동화 워크플로우</div>
+    <div class="feat"><span class="feat-dot" style="background:#1D9E75"></span>실시간 운영 KPI 대시보드·이상 감지</div>
+    <hr class="div">
+    <p class="feature-label">특화 Agent</p>
+    <span class="agent-chip">공급망 이상 감지</span>
+    <span class="agent-chip">생산 KPI 모니터링</span>
+    <span class="agent-chip">재무 예측 분석</span>
+    <span class="agent-chip">품질 데이터 분류</span>
+    <span class="agent-chip">설비 예지 정비</span>
+    <span class="agent-chip">리스크 스코어링</span>
+  </div>
+
+  <!-- MS Copilot -->
+  <div class="p-card">
+    <div class="p-header">
+      <div class="p-dot" style="background:#185FA5"></div>
+      <span class="p-name" style="color:#0C447C">MS Copilot Studio</span>
+    </div>
+    <p class="p-tagline">M365 생태계 생산성·협업 플랫폼</p>
+    <span class="pill" style="background:#E6F1FB;color:#0C447C">Graph API 자체 스키마</span>
+    <p class="feature-label">핵심 특징</p>
+    <div class="feat"><span class="feat-dot" style="background:#185FA5"></span>Teams·Outlook·SharePoint 네이티브 통합</div>
+    <div class="feat"><span class="feat-dot" style="background:#185FA5"></span>Power Automate로 M365 업무 자동화</div>
+    <div class="feat"><span class="feat-dot" style="background:#185FA5"></span>Graph API로 조직·캘린더·파일 접근</div>
+    <div class="feat"><span class="feat-dot" style="background:#185FA5"></span>사용자 접점 가장 넓음 (전사 배포 용이)</div>
+    <hr class="div">
+    <p class="feature-label">특화 Agent</p>
+    <span class="agent-chip">회의록 자동 요약</span>
+    <span class="agent-chip">메일 초안 생성</span>
+    <span class="agent-chip">보고서 작성 보조</span>
+    <span class="agent-chip">일정 조율 자동화</span>
+    <span class="agent-chip">문서 검색·요약</span>
+    <span class="agent-chip">팀 온보딩 가이드</span>
+  </div>
+
+  <!-- Custom Agent -->
+  <div class="p-card">
+    <div class="p-header">
+      <div class="p-dot" style="background:#EF9F27"></div>
+      <span class="p-name" style="color:#633806">Custom Agent (AWS/GCP)</span>
+    </div>
+    <p class="p-tagline">Legacy 시스템 연동 전담 플랫폼</p>
+    <span class="pill" style="background:#FAEEDA;color:#633806">Legacy 스키마 그대로 사용</span>
+    <p class="feature-label">핵심 특징</p>
+    <div class="feat"><span class="feat-dot" style="background:#EF9F27"></span>Private VPC 내 격리 실행 (보안 최우선)</div>
+    <div class="feat"><span class="feat-dot" style="background:#EF9F27"></span>LangGraph·CrewAI 기반 멀티스텝 Agent</div>
+    <div class="feat"><span class="feat-dot" style="background:#EF9F27"></span>SAP·Oracle·MES 전용 어댑터 레이어</div>
+    <div class="feat"><span class="feat-dot" style="background:#EF9F27"></span>Borrow 단계 OSS 활용, Build에서 내재화</div>
+    <hr class="div">
+    <p class="feature-label">특화 Agent</p>
+    <span class="agent-chip">SAP 발주 자동처리</span>
+    <span class="agent-chip">ERP 데이터 추출</span>
+    <span class="agent-chip">Oracle 조회·갱신</span>
+    <span class="agent-chip">MES 공정 연동</span>
+    <span class="agent-chip">Legacy 데이터 동기화</span>
+    <span class="agent-chip">규제 보고서 생성</span>
+  </div>
+
+  <!-- ixi-Enterprise -->
+  <div class="p-card ixi">
+    <div class="p-header">
+      <div class="p-dot" style="background:#9B59B6"></div>
+      <span class="p-name" style="color:#4A1B77">ixi-Enterprise</span>
+      <span class="pill" style="background:#F5EAFB;color:#4A1B77;margin-bottom:0;margin-left:auto">✦ NEW</span>
+    </div>
+    <p class="p-tagline">내부 업무 Workflow 전용 플랫폼</p>
+    <span class="pill" style="background:#F5EAFB;color:#4A1B77">KMS + Agent Builder 분리 구조</span>
+    <p class="feature-label">핵심 특징</p>
+    <div class="feat"><span class="feat-dot" style="background:#9B59B6"></span>Agent Builder: 업무 담당자 직접 Agent 제작</div>
+    <div class="feat"><span class="feat-dot" style="background:#9B59B6"></span>KMS: 사내 지식·매뉴얼·정책 데이터 집중 관리</div>
+    <div class="feat"><span class="feat-dot" style="background:#9B59B6"></span>내부 Workflow 프로세스와 긴밀하게 통합</div>
+    <div class="feat"><span class="feat-dot" style="background:#9B59B6"></span>KMS → 타 플랫폼 RAG 소스로 공유 가능</div>
+    <hr class="div">
+    <p class="feature-label">특화 Agent</p>
+    <span class="agent-chip">사내 규정 Q&amp;A</span>
+    <span class="agent-chip">결재 워크플로우</span>
+    <span class="agent-chip">온보딩 가이드</span>
+    <span class="agent-chip">업무 매뉴얼 검색</span>
+    <span class="agent-chip">프로젝트 현황 집계</span>
+    <span class="agent-chip">부서 요청 처리</span>
+  </div>
+
+</div>
+
+<!-- ══ Event Contracts ══ -->
+<p class="section-label">이벤트 계약 — 플랫폼 간 교차 연결 정의</p>
+<div class="ev-grid" style="margin-bottom:20px">
+  <div class="ev-card" style="border-left-color:#1D9E75">
+    <p class="ev-title">Copilot → Custom Agent</p>
+    <p class="ev-body">M365에서 결재·승인 완료 이벤트 발행 → SAP/ERP 업데이트 자동 트리거. 담당자가 Teams에서 승인하면 Legacy 시스템까지 자동 반영.</p>
+  </div>
+  <div class="ev-card" style="border-left-color:#EF9F27">
+    <p class="ev-title">Custom Agent → Palantir AIP</p>
+    <p class="ev-body">Legacy 시스템 데이터 추출·정제 완료 이벤트 → AIP Foundry 파이프라인 투입. ERP 원시 데이터를 분석 가능한 형태로 자동 전달.</p>
+  </div>
+  <div class="ev-card" style="border-left-color:#185FA5">
+    <p class="ev-title">Palantir AIP → Copilot</p>
+    <p class="ev-body">운영 이상 감지·KPI 임계값 초과 이벤트 → Teams 채널 알림·보고서 자동 발송. 분석 결과를 담당자에게 즉시 전달.</p>
+  </div>
+  <div class="ev-card" style="border-left-color:#9B59B6">
+    <p class="ev-title">ixi-Enterprise ↔ Custom Agent</p>
+    <p class="ev-body">ixi 내부 워크플로우 승인 이벤트 → Custom Agent가 Legacy 후처리. 반대로 Legacy 완료 신호를 ixi 워크플로우 다음 단계로 전달.</p>
+  </div>
+</div>
+
+<!-- ══ Quick Wins ══ -->
+<p class="section-label">Quick Win — 4 Pillar 공통화 즉시 달성 가능한 효과</p>
+<div class="qw-grid">
+
+  <div class="qw-card">
+    <span class="qw-badge" style="background:#E1F5EE;color:#085041">즉시 · 0–4주</span>
+    <p class="qw-num" style="color:#1D9E75">01</p>
+    <p class="qw-title">단일 SSO · 통합 접근</p>
+    <p class="qw-body">Azure AD·Okta로 4개 플랫폼을 단일 로그인으로 통합. 직원은 플랫폼별 계정 관리 불필요. 보안팀은 한 곳에서 접근 제어.</p>
+  </div>
+
+  <div class="qw-card">
+    <span class="qw-badge" style="background:#E1F5EE;color:#085041">즉시 · 1–4주</span>
+    <p class="qw-num" style="color:#1D9E75">02</p>
+    <p class="qw-title">KMS 전사 RAG 공유</p>
+    <p class="qw-body">ixi의 KMS를 공용 지식 소스로 개방. Copilot·Palantir·Custom Agent가 동일한 사내 규정·매뉴얼·정책을 RAG로 참조. "각 플랫폼마다 지식 중복 적재" 문제 즉시 해소.</p>
+  </div>
+
+  <div class="qw-card">
+    <span class="qw-badge" style="background:#E6F1FB;color:#0C447C">단기 · 1–2개월</span>
+    <p class="qw-num" style="color:#185FA5">03</p>
+    <p class="qw-title">통합 감사 로그</p>
+    <p class="qw-body">Control Plane Audit Logger가 4개 플랫폼 Agent 실행 이력을 단일 저장소에 수집. 컴플라이언스 감사 대응 시간 대폭 단축. "어느 Agent가 무엇을 했는가" 즉시 추적.</p>
+  </div>
+
+  <div class="qw-card">
+    <span class="qw-badge" style="background:#E6F1FB;color:#0C447C">단기 · 1–2개월</span>
+    <p class="qw-num" style="color:#185FA5">04</p>
+    <p class="qw-title">Teams 단일 알림창</p>
+    <p class="qw-body">Palantir 이상 감지·ixi 워크플로우·Custom Agent 처리 완료 알림을 모두 Teams 채널로 통합. 담당자는 플랫폼을 일일이 확인할 필요 없이 Teams 하나로 업무 맥락 유지.</p>
+  </div>
+
+  <div class="qw-card">
+    <span class="qw-badge" style="background:#FAEEDA;color:#633806">중기 · 2–3개월</span>
+    <p class="qw-num" style="color:#854F0B">05</p>
+    <p class="qw-title">결재-ERP 자동 연동</p>
+    <p class="qw-body">ixi 또는 Copilot 결재 완료 이벤트 → Custom Agent가 SAP/ERP 자동 업데이트. 담당자의 수동 재입력 제거. 휴먼 에러 감소·처리 속도 향상 즉시 체감.</p>
+  </div>
+
+  <div class="qw-card">
+    <span class="qw-badge" style="background:#FAEEDA;color:#633806">중기 · 2–3개월</span>
+    <p class="qw-num" style="color:#854F0B">06</p>
+    <p class="qw-title">운영 데이터 → 현장 알림</p>
+    <p class="qw-body">Custom Agent가 Legacy MES/SCADA 데이터 추출 → Palantir에서 이상 감지 → Copilot이 Teams로 현장 담당자 즉시 알림. 3개 플랫폼이 이벤트 계약만으로 연결된 첫 번째 End-to-End 시나리오.</p>
+  </div>
+
+  <div class="qw-card">
+    <span class="qw-badge" style="background:#F5EAFB;color:#4A1B77">중기 · 3개월</span>
+    <p class="qw-num" style="color:#6B2F91">07</p>
+    <p class="qw-title">ixi Agent Builder 전사 확산</p>
+    <p class="qw-body">ixi Agent Builder로 각 부서 담당자가 직접 업무 Agent를 제작·배포. IT 의존도 감소. 부서별 특화 Agent가 빠르게 누적되어 전사 Agent Catalog 형성.</p>
+  </div>
+
+  <div class="qw-card">
+    <span class="qw-badge" style="background:#F5EAFB;color:#4A1B77">중기 · 3개월</span>
+    <p class="qw-num" style="color:#6B2F91">08</p>
+    <p class="qw-title">공통 Secret 관리</p>
+    <p class="qw-body">4개 플랫폼의 API Key·Credential을 단일 Secret Manager로 통합. 키 만료·교체 관리를 중앙화. 플랫폼별 키 분산 관리로 인한 보안 사고 리스크 즉시 감소.</p>
+  </div>
+
+</div>
+
+</body>
+</html>

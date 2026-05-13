@@ -126,11 +126,29 @@ export const api = {
   platforms: () => jsonFetch<PlatformMeta[]>("/api/platforms"),
 };
 
+// PLATFORM_COLOR: 원본(다크 배경에서 채도 살린) 톤. 라이트 디자인 진입 후에는
+// PLATFORM_DARK 를 일관 사용. 본 상수는 backwards-compat용.
 export const PLATFORM_COLOR: Record<PlatformCode, string> = {
   palantir: "#0E9B7F",
   copilot: "#1E6FBF",
   custom: "#B86800",
   ixi: "#7B35B0",
+};
+
+// PLATFORM_DARK: editorial 라이트 톤(흰 배경 위) 텍스트·라인용. 채도 조금 낮춰 가독성 ↑.
+export const PLATFORM_DARK: Record<PlatformCode, string> = {
+  palantir: "#0A7A63",
+  copilot:  "#185793",
+  custom:   "#8A4F00",
+  ixi:      "#5F2890",
+};
+
+// PLATFORM_TINT: 카드/패널 배경에 사용하는 매우 연한 톤. (1차 인상은 거의 흰색)
+export const PLATFORM_TINT: Record<PlatformCode, string> = {
+  palantir: "#F0F7F4",
+  copilot:  "#F0F5FA",
+  custom:   "#F8F2E6",
+  ixi:      "#F5EFFA",
 };
 
 export const PLATFORM_NAME: Record<PlatformCode, string> = {

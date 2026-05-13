@@ -1,22 +1,15 @@
 import Link from "next/link";
-import { api, PLATFORM_NAME, PlatformCode } from "@/lib/api";
+import { api, PLATFORM_DARK, PLATFORM_NAME, PlatformCode } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
-
-const DARK: Record<PlatformCode, string> = {
-  palantir: "#0A7A63",
-  copilot:  "#185793",
-  custom:   "#8A4F00",
-  ixi:      "#5F2890",
-};
 
 export default async function TicketsPage() {
   let tickets;
   let err: string | null = null;
   try {
     tickets = await api.listTickets({ limit: 100 });
-  } catch (e: any) {
-    err = e.message || "이력을 불러오지 못했습니다.";
+  } catch (e: unknown) {
+    err = e instanceof Error ? e.message : "이력을 불러오지 못했습니다.";
     tickets = [];
   }
 
@@ -107,7 +100,7 @@ export default async function TicketsPage() {
                     {t.decision ? (
                       <span
                         className="text-[22px] font-bold leading-none tracking-tight"
-                        style={{ color: DARK[t.decision.primary] }}
+                        style={{ color: PLATFORM_DARK[t.decision.primary] }}
                       >
                         {t.decision.confidence}
                         <span className="ml-0.5 font-mono text-[11px] font-normal text-ink-dim">
@@ -157,7 +150,7 @@ function Td({ children, className = "" }: { children: React.ReactNode; className
 }
 
 function PlatformTag({ code }: { code: PlatformCode }) {
-  const color = DARK[code];
+  const color = PLATFORM_DARK[code];
   return (
     <span
       className="inline-flex items-center gap-2 border-l-[3px] pl-2 text-[14px] font-semibold leading-tight"

@@ -34,6 +34,9 @@ services:
         condition: service_healthy
     volumes:
       - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
+      - ./backend/scripts:/app/scripts
+      - ./backend/pytest.ini:/app/pytest.ini
       - ./docs:/app/docs:ro
     restart: unless-stopped
 

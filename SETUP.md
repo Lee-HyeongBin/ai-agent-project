@@ -50,7 +50,7 @@ powershell -ExecutionPolicy Bypass -File .\install_docker.ps1
 
 ---
 
-## 3. 환경변수 설정
+## 3. 환경변수 설정 — ⚠️ 주의
 
 ```powershell
 cd D:\workspace\ai-agent-project
@@ -58,7 +58,19 @@ Copy-Item .env.example .env
 notepad .env   # ← ANTHROPIC_API_KEY 를 본인 키로 교체
 ```
 
-> 키가 없거나 `sk-ant-xxx` 그대로 두면 백엔드가 자동으로 **룰북 fallback 모드** 로 동작합니다 (LLM 자연어 근거 없음, 점수만 제공).
+> 키가 없거나 placeholder(`sk-ant-your-key-here` / `sk-ant-xxx`) 그대로 두면 백엔드가 자동으로 **룰북 fallback 모드** 로 동작합니다 (LLM 자연어 근거 없음, 점수만 제공).
+
+### `.env` vs `.env.example` — 절대 혼동 금지
+
+| 파일 | 추적 | 들어가는 것 |
+|------|------|------------|
+| **`.env`** | `.gitignore` 로 **git 제외됨** | **실제 키** (`sk-ant-api03-...`) |
+| **`.env.example`** | **git 에 커밋됨** | placeholder 만 (`sk-ant-your-key-here`) |
+
+**2026-05-13 인시던트**: `.env.example` 에 실제 키가 들어가 GitHub push protection 으로 차단된 적 있음. 그 키는 폐기·재발급해야 했음. 같은 실수 안 하려면:
+- 키는 항상 `.env` 에만 작성
+- 새 placeholder 가 필요하면 `.env.example` 에 추가하되 **절대 진짜 값 X**
+- 다음 단계의 `verify_env.ps1` 이 `.env.example` 자체 시크릿 검사도 함
 
 ---
 
@@ -120,3 +132,30 @@ docker compose down -v
 
 본 디렉토리 전체를 `git clone` 또는 USB 복사 후 동일 절차 (1단계부터) 진행하면 됩니다.
 `.env` 만 별도 작성하면 끝.
+
+---
+
+## 9. 시크릿 보호 — pre-commit hook 설치 (1회)
+
+매 commit 시 자동으로 시크릿 스캔(`gitleaks`)이 돌도록 설치. 2026-05-13 인시던트 같은 키 노출을 로컬에서 1차 차단함.
+
+```powershell
+# pre-commit 설치 (Python 필요)
+pip install pre-commit
+
+# repo 에 hook 설치 (1회만)
+cd D:\workspace\ai-agent-project
+pre-commit install
+```
+
+이후 `git commit` 시:
+- staged 파일에 API 키·토큰·private key 가 들어 있으면 차단
+- 큰 파일(>512KB) 차단
+- merge conflict 마커·trailing whitespace 정리
+
+수동으로 한 번 전체 스캔:
+```powershell
+pre-commit run --all-files
+```
+
+hook 우회는 금지 (`--no-verify` 사용 X). 정말 필요하면 false positive 이유와 함께 사용자(전영환)에게 보고 후 진행.

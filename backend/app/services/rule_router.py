@@ -18,27 +18,43 @@ DOMAIN_AFFINITY: dict[str, dict[str, int]] = {
     "crossplatform": {"palantir": 6, "copilot": 8, "custom": 8, "ixi": 0},
 }
 
-# 시스템 키워드 → 가산점 (소문자 매칭)
+# 시스템 키워드 → 가산점 (소문자 매칭).
+# 회사 실제 시스템 매핑 — 변경 시 docs/PLATFORMS.md, docs/DECISIONS.md(ADR-0003) 함께 갱신.
 SYSTEM_AFFINITY: dict[str, dict[str, int]] = {
-    "sap": {"custom": 14, "palantir": 4},
-    "oracle": {"custom": 12, "palantir": 4},
-    "mes": {"custom": 14},
-    "scada": {"custom": 14},
-    "erp": {"custom": 8, "palantir": 4},
-    "teams": {"copilot": 14},
-    "outlook": {"copilot": 14},
-    "sharepoint": {"copilot": 12},
-    "onedrive": {"copilot": 10},
-    "m365": {"copilot": 12},
-    "office": {"copilot": 8},
-    "kms": {"ixi": 16},
-    "그룹웨어": {"ixi": 14},
-    "결재": {"ixi": 14},
-    "온보딩": {"ixi": 10},
-    "매뉴얼": {"ixi": 8},
-    "foundry": {"palantir": 14},
-    "ontology": {"palantir": 12},
-    "kpi": {"palantir": 10},
+    # ── 사내 운영/Legacy ERP·CRM → Custom Agent (private VPC + 깊은 통합)
+    "ucube":            {"custom": 16, "palantir": 4},
+    "ucrm":             {"custom": 14, "palantir": 6},
+    "경영지원시스템":   {"custom": 10, "ixi": 8},
+    "경영지원":         {"custom": 10, "ixi": 8},
+
+    # ── 데이터·KPI 분석 자산 → Palantir AIP
+    "datalake":         {"palantir": 18, "custom": 4},
+    "data lake":        {"palantir": 18, "custom": 4},
+    "데이터레이크":     {"palantir": 18, "custom": 4},
+    "kpi":              {"palantir": 10},
+
+    # ── 사내 지식·문서 RAG → ixi-Enterprise
+    "knowledgelake":    {"ixi": 18, "custom": 2},
+    "knowledge lake":   {"ixi": 18, "custom": 2},
+    "지식레이크":       {"ixi": 18, "custom": 2},
+    "kms":              {"ixi": 14},
+
+    # ── 사내 챗봇/티켓팅 → ixi(지식·워크플로우) + Copilot 약간(Teams 연동 시)
+    "ai헬프데스크":     {"ixi": 14, "copilot": 4},
+    "ai 헬프데스크":    {"ixi": 14, "copilot": 4},
+    "헬프데스크":       {"ixi": 12},
+    "ai helpdesk":      {"ixi": 14, "copilot": 4},
+    "helpdesk":         {"ixi": 12},
+
+    # ── M365 → Copilot Studio
+    "ms teams":         {"copilot": 14},
+    "teams":            {"copilot": 14},
+    "ms sharepoint":    {"copilot": 12},
+    "sharepoint":       {"copilot": 12},
+    "outlook":          {"copilot": 14},
+    "onedrive":         {"copilot": 10},
+    "m365":             {"copilot": 12},
+    "office":           {"copilot": 8},
 }
 
 FREQUENCY_FIT: dict[str, dict[str, int]] = {

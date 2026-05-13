@@ -80,8 +80,8 @@ export function RouteForm() {
     try {
       const r = await api.route(payload());
       setResult(r);
-    } catch (e: any) {
-      setError(e.message || "분석 중 오류가 발생했습니다.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "분석 중 오류가 발생했습니다.");
       setResult(null);
     } finally {
       setLoading(false);
@@ -104,8 +104,8 @@ export function RouteForm() {
       const t = await api.createTicket(created);
       setSavedTicketId(t.id);
       setResult(t.decision);
-    } catch (e: any) {
-      setError(e.message || "저장 중 오류가 발생했습니다.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "저장 중 오류가 발생했습니다.");
     } finally {
       setSaving(false);
     }
@@ -121,7 +121,7 @@ export function RouteForm() {
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="예) ERP 일일 생산데이터 이상감지 알림"
+              placeholder="예) UCube 발주 이상 탐지 알림"
             />
           </Field>
 
@@ -146,7 +146,7 @@ export function RouteForm() {
             <Textarea
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
-              placeholder="예) 매일 오전 ERP에서 생산 데이터를 추출하여 이상값을 감지하고 담당자에게 알림을 보내는 Agent"
+              placeholder="예) 매일 오전 UCube 발주 데이터에서 이상치(가격 급변·중복 발주)를 탐지해 담당자 Teams 채널에 알림"
               rows={3}
             />
           </Field>
@@ -185,7 +185,7 @@ export function RouteForm() {
             <Input
               value={systems}
               onChange={(e) => setSystems(e.target.value)}
-              placeholder="예) SAP ERP, Oracle DB, Teams, SharePoint, Foundry"
+              placeholder="예) UCube, UCRM, DataLake, KnowledgeLake, MS Teams, MS SharePoint, AI헬프데스크, 경영지원시스템"
             />
           </Field>
 
@@ -275,7 +275,7 @@ function SectionHead({
           </h2>
         </div>
         {hint && (
-          <p className="max-w-sm text-[13.5px] leading-snug text-ink-soft md:text-right">
+          <p className="text-[13.5px] leading-snug text-ink-soft md:text-right">
             {hint}
           </p>
         )}
@@ -315,7 +315,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="w-full border-0 border-b-2 border-line bg-transparent px-1 py-2.5 text-[16px] text-ink placeholder:text-ink-dim focus:border-ink focus:outline-none"
+      className="w-full border-0 border-b-2 border-line bg-transparent px-1 py-2.5 text-[16px] text-ink placeholder:text-ink-dim focus:border-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
     />
   );
 }
@@ -328,7 +328,7 @@ function Textarea({
     <textarea
       rows={rows}
       {...props}
-      className="w-full border border-line bg-paper px-4 py-3 text-[16px] leading-[1.55] text-ink placeholder:text-ink-dim focus:border-ink focus:outline-none"
+      className="w-full border border-line bg-paper px-4 py-3 text-[16px] leading-[1.55] text-ink placeholder:text-ink-dim focus:border-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
     />
   );
 }
@@ -340,7 +340,7 @@ function Select({
   return (
     <select
       {...props}
-      className="w-full appearance-none border-0 border-b-2 border-line bg-transparent bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 12%22><path fill=%22%23171717%22 d=%22M6 8L2 4h8z%22/></svg>')] bg-[length:12px_12px] bg-[right_4px_center] bg-no-repeat py-2.5 pl-1 pr-8 text-[16px] text-ink focus:border-ink focus:outline-none"
+      className="w-full appearance-none border-0 border-b-2 border-line bg-transparent bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 12%22><path fill=%22%23171717%22 d=%22M6 8L2 4h8z%22/></svg>')] bg-[length:12px_12px] bg-[right_4px_center] bg-no-repeat py-2.5 pl-1 pr-8 text-[16px] text-ink focus:border-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
     >
       {children}
     </select>

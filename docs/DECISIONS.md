@@ -4,6 +4,39 @@
 
 ---
 
+## ADR-0004 — 룰북 SYSTEM_AFFINITY 를 회사 실제 시스템 자산으로 한정
+
+**Date:** 2026-05-14
+**Status:** Accepted
+
+**Context:** 룰북 초안의 시스템 키워드(SAP / Oracle / MES / SCADA / Foundry / KMS / 그룹웨어 등)는 일반적인 엔터프라이즈 어휘. 회사가 실제 운영하는 자산이 아닌 항목이 다수라, 사용자가 입력할 가능성이 낮고 룰북이 헛돌 가능성. 사용자(전영환)가 회사 실제 시스템 8종을 명시해 매핑을 다시 짜라고 요청.
+
+**Decision:** `SYSTEM_AFFINITY` 키워드를 다음 사내 자산으로 갈아엎음.
+
+| 시스템 | 가중치 우위 플랫폼 | 근거 |
+|---|---|---|
+| UCube (사내 ERP) | Custom | Legacy 사내 운영 시스템, private VPC 어댑터 필요 |
+| UCRM (사내 CRM) | Custom + Palantir | Legacy + 고객 데이터(분석 자산) 양면성 |
+| 경영지원시스템 | Custom + ixi | 결재·인사 워크플로우 — ixi 강점이나 데이터 연동 깊으면 Custom |
+| DataLake | Palantir | 대용량 분석 원천 자산 |
+| KnowledgeLake | ixi | 사내 지식 저장소 — RAG/KMS 핵심 |
+| AI헬프데스크 | ixi (+ Copilot 약간) | 사내 챗봇/티켓팅 |
+| MS Teams | Copilot | M365 협업 핵심 |
+| MS SharePoint | Copilot | M365 문서 핵심 |
+
+기존 외부 일반 명칭(SAP/Oracle/MES/SCADA/Foundry/Ontology/KMS/그룹웨어/결재/온보딩/매뉴얼)은 제거.
+
+**Consequences:**
+- 회사 실제 워크로드 입력에 룰북이 즉시 반응 (헛돌지 않음).
+- `docs/PLATFORMS.md` 사내 자산 사전 섹션 추가, `backend/app/prompts/router_system.md` LLM 시스템 프롬프트도 동기화.
+- 향후 사내 시스템 추가/변경 시 본 ADR을 갱신하거나 신규 ADR 발행.
+- 룰북 가중치 자체(시스템당 +10~+18점)는 추정값. 실측 케이스 누적 후 Phase 1 후반에 튜닝 예정.
+
+**Alternatives considered:**
+- 사내 자산을 별도 `docs/SYSTEMS.yaml` 로 외부화 (Tier 2 작업으로 미룸 — 본 ADR은 우선 코드 동기화에 집중).
+
+---
+
 ## ADR-0003 — 라우팅을 LLM 단독이 아닌 룰북+LLM 하이브리드로
 
 **Date:** 2026-05-13

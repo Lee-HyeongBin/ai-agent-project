@@ -163,12 +163,31 @@ docker compose up --build
 - [x] LLM fallback 모드 — API 키 없을 때 룰북만으로 결과 + 경고 메시지 정상
 - [x] **Anthropic API 실제 호출 + 응답 파싱** — `claude-sonnet-4-6` 호출 성공, JSON 파싱 안정, reasoning/stack/alternatives/warnings 모두 자연어 정상 생성, 문과 사용자용 괄호 풀이까지 자동 포함
 
-### 다음 (Phase 1)
-- [ ] 룰북 가중치 튜닝 (실측 케이스 기반)
-- [ ] 이력 페이지 페이지네이션 / 필터 / 검색
-- [ ] 단위 테스트 (`backend/tests/`)
-- [ ] LLM 응답 캐싱
-- [ ] 사내 SSO 인증
-- [ ] 관리자 대시보드 / 룰북 편집기
+### Tier 0~1 완료 (2026-05-14 세션 #3 — Phase 1 진입 점검)
+- [x] **시크릿 hook**: `.pre-commit-config.yaml` 도입(gitleaks + pre-commit-hooks). 2026-05-13 인시던트(.env.example 키 노출) 재발 방지
+- [x] **`.env.example` 안전 강화** + `verify_env.ps1` 에 placeholder 검사 추가
+- [x] **README/SETUP 보안 섹션** — `.env` vs `.env.example` 차이, pre-commit 설치 가이드
+- [x] **Frontend 접근성**: `ink-dim #8A8A8A → #5B5B5B` (WCAG AAA 통과), `focus-visible` ring 도입
+- [x] **TypeScript 타입 안전**: `catch (e: any)` → `e: unknown` + `instanceof Error` 전면 교체
+- [x] **플랫폼 컬러 중앙화**: `frontend/lib/api.ts` 에 `PLATFORM_DARK` `PLATFORM_TINT` 추가, 3개 페이지 import 정리
+- [x] **LLM 견고성**: `max_retries=2` + `RateLimitError`·`APITimeoutError`·`APIConnectionError`·`APIStatusError` 별도 처리 + `request_id` 로그
+- [x] **pytest 테스트 기반**: `backend/tests/` — `conftest.py`(in-memory aiosqlite), `test_rule_router.py` 8 cases, `test_llm_router.py` 6 cases (anthropic mock), `test_api.py` 8 cases (httpx ASGI)
+- [x] **문서 동기화**: `AGENTS.md` 보강, `docs/API.md` 실제 엔드포인트와 동기화
 
-마지막 갱신: 2026-05-13 (세션 #2 — 빌드·E2E 검증 완료)
+### 다음 (Phase 1 본격, Tier 2)
+- [ ] Alembic 마이그레이션 도입 (현재 `Base.metadata.create_all` 만)
+- [ ] DB 인덱스 (`Ticket.created_at desc`, `RoutingDecision.primary`)
+- [ ] 이력 페이지네이션·필터·검색 (backend cursor + frontend UI)
+- [ ] LLM 응답 캐싱 (입력 해시 → 결과, Redis 또는 SQLite)
+- [ ] 룰북 가중치 yaml 분리 (실측 케이스 보면서 튜닝)
+- [ ] Backend Pydantic → frontend TS 자동 생성 (`openapi-typescript`)
+- [ ] GitHub Actions CI — lint(ruff/eslint) + type(mypy/tsc) + pytest + trufflehog + docker build
+
+### Tier 3 (Phase 2, 운영 강화)
+- [ ] Production Dockerfile 분리 (멀티스테이지, 비-root, `--reload` 제거)
+- [ ] 인증 (Bearer → SSO)
+- [ ] CORS 화이트리스트 명시 (현재 `*`)
+- [ ] 구조화 로깅 + audit log 분리
+- [ ] Prometheus 메트릭
+
+마지막 갱신: 2026-05-14 (세션 #3 — Tier 0·1 종료, Phase 1 본격 진입 가능)

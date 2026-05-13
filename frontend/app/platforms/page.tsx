@@ -1,29 +1,14 @@
-import { api } from "@/lib/api";
-import { PlatformCode } from "@/lib/api";
+import { api, PLATFORM_DARK, PLATFORM_TINT, PlatformCode } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
-
-const DARK: Record<PlatformCode, string> = {
-  palantir: "#0A7A63",
-  copilot:  "#185793",
-  custom:   "#8A4F00",
-  ixi:      "#5F2890",
-};
-
-const TINT: Record<PlatformCode, string> = {
-  palantir: "#F0F7F4",
-  copilot:  "#F0F5FA",
-  custom:   "#F8F2E6",
-  ixi:      "#F5EFFA",
-};
 
 export default async function PlatformsPage() {
   let platforms;
   let err: string | null = null;
   try {
     platforms = await api.platforms();
-  } catch (e: any) {
-    err = e.message || "플랫폼 정보를 불러오지 못했습니다.";
+  } catch (e: unknown) {
+    err = e instanceof Error ? e.message : "플랫폼 정보를 불러오지 못했습니다.";
     platforms = [];
   }
 
@@ -83,8 +68,8 @@ function PlatformChapter({
   platform: Platform;
   index: number;
 }) {
-  const color = DARK[p.code];
-  const tint = TINT[p.code];
+  const color = PLATFORM_DARK[p.code];
+  const tint = PLATFORM_TINT[p.code];
   const flipped = index % 2 === 1;
 
   return (

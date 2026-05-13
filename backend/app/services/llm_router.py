@@ -7,9 +7,17 @@ from __future__ import annotations
 import json
 import logging
 import re
+import uuid
 from pathlib import Path
 
-from anthropic import AsyncAnthropic, APIError
+from anthropic import (
+    APIConnectionError,
+    APIError,
+    APIStatusError,
+    APITimeoutError,
+    AsyncAnthropic,
+    RateLimitError,
+)
 
 from app.config import get_settings
 from app.schemas import PlatformScores, RouteRequest, RouteResult
@@ -104,9 +112,14 @@ async def route(req: RouteRequest, rule_scores: PlatformScores) -> RouteResult:
         logger.info("LLM disabled — falling back to rule-only routing")
         return _fallback_result(req, rule_scores)
 
+    request_id = uuid.uuid4().hex[:8]
+
+    # max_retries: SDK가 transient error(429/5xx, network)에 대해 자동 backoff.
+    # timeout: 전체 HTTP 요청 상한. 응답 안 오면 APITimeoutError.
     client = AsyncAnthropic(
         api_key=settings.anthropic_api_key,
         timeout=settings.anthropic_timeout_s,
+        max_retries=2,
     )
 
     try:
@@ -116,10 +129,27 @@ async def route(req: RouteRequest, rule_scores: PlatformScores) -> RouteResult:
             system=_load_system_prompt(),
             messages=[{"role": "user", "content": _build_user_prompt(req, rule_scores)}],
         )
-    except APIError as e:
-        logger.exception("Anthropic API error: %s", e)
+    except RateLimitError as e:
+        logger.warning("[llm:%s] rate-limited → fallback: %s", request_id, e)
         result = _fallback_result(req, rule_scores)
-        result.warnings.insert(0, f"LLM 호출 실패 → 룰북 fallback. ({e.__class__.__name__})")
+        result.warnings.insert(0, "LLM rate limit — 잠시 후 재시도 또는 룰북 결과 사용")
+        return result
+    except (APITimeoutError, APIConnectionError) as e:
+        logger.warning("[llm:%s] connection/timeout → fallback: %s", request_id, e.__class__.__name__)
+        result = _fallback_result(req, rule_scores)
+        result.warnings.insert(
+            0, f"LLM 네트워크/타임아웃 ({e.__class__.__name__}) — 룰북 fallback"
+        )
+        return result
+    except APIStatusError as e:
+        logger.error("[llm:%s] non-2xx status %s → fallback: %s", request_id, e.status_code, e)
+        result = _fallback_result(req, rule_scores)
+        result.warnings.insert(0, f"LLM API 오류 (HTTP {e.status_code}) — 룰북 fallback")
+        return result
+    except APIError as e:
+        logger.exception("[llm:%s] unexpected APIError → fallback", request_id)
+        result = _fallback_result(req, rule_scores)
+        result.warnings.insert(0, f"LLM 호출 실패 → 룰북 fallback ({e.__class__.__name__})")
         return result
 
     raw = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
@@ -128,10 +158,17 @@ async def route(req: RouteRequest, rule_scores: PlatformScores) -> RouteResult:
         data = _extract_json(raw)
         primary = _normalize_primary(data.get("primary", ""))
     except (ValueError, json.JSONDecodeError) as e:
-        logger.warning("LLM 응답 파싱 실패: %s — fallback", e)
+        logger.warning("[llm:%s] response parse fail → fallback: %s", request_id, e)
         result = _fallback_result(req, rule_scores)
         result.warnings.insert(0, "LLM 응답 파싱 실패 → 룰북 fallback")
         return result
+
+    logger.info(
+        "[llm:%s] ok — primary=%s confidence=%s",
+        request_id,
+        primary,
+        data.get("confidence"),
+    )
 
     scores_raw = data.get("scores") or rule_scores.model_dump()
     scores = PlatformScores(

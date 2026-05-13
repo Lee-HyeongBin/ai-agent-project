@@ -1,4 +1,5 @@
 import {
+  PLATFORM_DARK,
   PLATFORM_NAME,
   PLATFORM_TAG,
   PlatformCode,
@@ -7,15 +8,8 @@ import {
 
 const ORDER: PlatformCode[] = ["palantir", "copilot", "custom", "ixi"];
 
-const DARK: Record<PlatformCode, string> = {
-  palantir: "#0A7A63",
-  copilot:  "#185793",
-  custom:   "#8A4F00",
-  ixi:      "#5F2890",
-};
-
 export function ResultPanel({ result }: { result: RouteResult }) {
-  const winnerColor = DARK[result.primary];
+  const winnerColor = PLATFORM_DARK[result.primary];
 
   return (
     <section className="animate-fadeUp">
@@ -87,7 +81,7 @@ export function ResultPanel({ result }: { result: RouteResult }) {
 
         <div className="grid grid-cols-1 gap-y-6 md:grid-cols-4 md:gap-x-8">
           {ORDER.map((code, i) => {
-            const color = DARK[code];
+            const color = PLATFORM_DARK[code];
             const score = result.scores[code];
             const rule = result.rule_scores[code];
             const isWinner = code === result.primary;

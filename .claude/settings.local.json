@@ -20,7 +20,21 @@
       "Bash(grep -oP '\\\\.[a-zA-Z][^,{\\\\s]*' /tmp/layout.css)",
       "Bash(docker exec *)",
       "Bash(grep -A1 \"shadow-\\\\\\\\\\\\[3px_3px_0_0_#7A1F2B\\\\\\\\\\\\]\" /tmp/layout.css)",
-      "Bash(grep -oE \"Agent 과제의 목적[^<]{0,200}\")"
+      "Bash(grep -oE \"Agent 과제의 목적[^<]{0,200}\")",
+      "Bash(grep -E \"^\\\\.env$|secret|credential\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(grep -E \"sk-ant-api[0-9]{2}-[A-Za-z0-9_-]{20,}\")",
+      "Bash(grep -E \"sk-ant-api[0-9]{2}-[A-Za-z0-9]{8,}\")",
+      "Bash(grep -nE \"sk-ant-api[0-9]{2}-[A-Za-z0-9]{8,}\")",
+      "Bash(grep -nE \"sk-ant-api[0-9]{2}-[A-Za-z0-9]{8,}\" /tmp/git.diff)",
+      "Bash(grep -qE \"sk-ant-api[0-9]{2}-[A-Za-z0-9]{12,}\" /tmp/head.diff)",
+      "Bash(grep -nE \"sk-ant-api[0-9]{2}-[A-Za-z0-9]{12,}\" /tmp/head.diff)",
+      "Bash(Get-ChildItem -Path \"D:\\\\workspace\\\\ai-agent-project\\\\backend\" -Recurse -File)",
+      "Bash(Select-Object FullName)",
+      "Bash(ConvertTo-Json -Depth 1)",
+      "Bash(Get-ChildItem -Path \"D:\\\\workspace\\\\ai-agent-project\\\\frontend\" -Recurse -File -Name)",
+      "Bash(Select-Object -First 50)"
     ]
   }
 }

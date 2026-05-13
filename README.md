@@ -17,8 +17,11 @@
 ```bash
 cp .env.example .env
 # .env 의 ANTHROPIC_API_KEY 를 본인 키로 교체
+# ⚠️  .env.example 에는 절대 실제 키를 넣지 말 것 — 2026-05-13 인시던트 참고 (SETUP.md §3)
 docker compose up --build
 ```
+
+> 처음 셋업이면 `pre-commit install` 1회 실행 권장 — commit 단계에서 시크릿 자동 차단 (`SETUP.md` §9).
 
 - 메인: http://localhost:3000
 - API: http://localhost:8000/docs (Swagger)

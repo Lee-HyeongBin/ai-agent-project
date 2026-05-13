@@ -1,0 +1,31 @@
+# AgentPlatform — Local commit-time secret scanning + basic hygiene.
+#
+# 설치 (최초 1회):
+#   pip install pre-commit
+#   pre-commit install
+#
+# 이후 `git commit` 시 자동으로 hook 실행됨.
+# Secret 노출 인시던트(2026-05-13) 재발 방지가 본 설정의 1순위.
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        name: gitleaks (secret scan)
+        description: "API 키·토큰·시크릿이 staged 파일에 있으면 차단"
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=512']
+      - id: check-merge-conflict
+      - id: check-yaml
+        exclude: ^docker-compose.*\.yml$  # compose의 ${VAR:-} 문법은 strict YAML 아님
+      - id: check-json
+      - id: end-of-file-fixer
+        exclude: ^ref/  # 원본 시안 손대지 않음 (CLAUDE.md §2)
+      - id: trailing-whitespace
+        exclude: ^ref/
+      - id: detect-private-key

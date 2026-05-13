@@ -38,10 +38,20 @@ $ok = (Check "docker daemon"   {
 $ok = (Check ".env file"       {
   if (Test-Path .env) {
     $line = Select-String -Path .env -Pattern 'ANTHROPIC_API_KEY=' | Select-Object -First 1
-    if ($line.Line -match 'ANTHROPIC_API_KEY=sk-ant-xxx') { 'placeholder (fallback mode)' }
-    elseif ($line.Line -match 'ANTHROPIC_API_KEY=.{5,}')  { 'present' }
+    if (-not $line) { 'present but no ANTHROPIC_API_KEY line' }
+    elseif ($line.Line -match 'ANTHROPIC_API_KEY=sk-ant-(xxx|your-key-here)') { 'placeholder (fallback mode)' }
+    elseif ($line.Line -match 'ANTHROPIC_API_KEY=.{5,}') { 'present' }
     else { 'present but empty' }
   } else { $null }
+}) -and $ok
+
+# .env.example 에는 절대 실제 키가 들어가면 안 됨 (2026-05-13 인시던트 재발 방지)
+$ok = (Check ".env.example clean" {
+  if (-not (Test-Path .env.example)) { 'missing'; return }
+  $line = Select-String -Path .env.example -Pattern 'sk-ant-api[0-9]' | Select-Object -First 1
+  if ($line) {
+    throw ".env.example 에 실제 Anthropic 키 패턴이 감지됨! placeholder 'sk-ant-your-key-here' 로 교체하세요."
+  } else { 'placeholder only' }
 }) -and $ok
 
 foreach ($port in 3000, 8000, 5432) {
